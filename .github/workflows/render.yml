@@ -1,0 +1,41 @@
+name: Blender Cloud Render
+
+on:
+  push:
+    paths:
+      - "scene.py"
+      - ".github/workflows/render.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+          blender --version
+
+      - name: Generate 3D scene
+        run: blender --background --threads 2 --python-exit-code 1 --python scene.py
+
+      - name: Check generated files
+        run: |
+          test -s output/preview.png
+          test -s output/scene.blend
+
+      - name: Save generated files
+        uses: actions/upload-artifact@v4
+        with:
+          name: blender-output
+          path: |
+            output/preview.png
+            output/scene.blend
+          if-no-files-found: error
